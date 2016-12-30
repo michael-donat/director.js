@@ -39,8 +39,8 @@ bus.handle(command);
 ```
 
 - `registry` - can be anything as long as your locator can use it to retrieve a handle by command name, if your registry provides `get(id)` method, the default locator will work fine.  
-- `nameResolver(command)` - given command it will return it's name, default locator looks for `command.ID` property
-- `locator(command, registry)` - given command name returned by nameResolver, locator is responsible for returning a handler form registry, by default it will call `registry.get(command)`
+- `nameResolver(command)` - given command, it will return its name - default locator will return `command.ID` property
+- `locator(command, registry)` - given command name returned by nameResolver, locator is responsible for returning a handler from registry -  by default it will call `registry.get(command)`
 - `handlerResolver(command, handler)` - given command name and handler returned by locator it will return the command execution method, by default it will return `handler['execute']`
 
 ### Registry
