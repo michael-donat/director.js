@@ -6,6 +6,11 @@ module.exports = class Bus {
 		this.locator = locator || function(command, registry) { return registry.get(command); };
 		this.nameResolver = nameResolver || function(command) { return command ? command.ID : null; };
 		this.handlerResolver = handlerResolver || function(command, handler) { return handler.execute ; };
+		this.middleware = [];
+	}
+
+	use(middleware) {
+		this.middleware.push(middleware);
 	}
 
 	resolveHandler(command) {
@@ -35,15 +40,32 @@ module.exports = class Bus {
 		return { handler, method: handlerMethod, name };
 	}
 
-	handle(command) {
+	handle(command, callback) {
+		try {
+			if (!command) {
+				throw new Error(`Command expected, got ${typeof(command)} instead.`);
+			}
 
-		if (!command) {
-			throw new Error(`Command expected, got ${typeof(command)} instead.`);
+			const { handler, method } = this.resolveHandler(command);
+
+			const middlewareStack = this.middleware.slice(0);
+
+			function next() {
+				const middleware = middlewareStack.shift();
+
+				if (!middleware) {
+					return method.call(handler, command, callback);
+				}
+
+				return middleware.handle(handler, command, next);
+			}
+
+			return next();
+		} catch (error) {
+			if (callback) {
+				return callback(error);
+			}
+			throw error;
 		}
-
-		const { handler, method, name } = this.resolveHandler(command);
-
-		return method.call(handler, command);
-
 	}
 }

@@ -50,7 +50,9 @@ The memory registry is exported via `director.MemoryRegistry` and is the default
 - `MemoryRegistry.register(name, handler)` - register handler under name
 - `MemoryRegistry.get(name)` - return handler by name
 
-### Full example
+### Short example
+
+(more complete example, with promises and callback based calls, can be found here https://github.com/michael-donat/director.js/blob/master/example.js)
 
 ```node
 
@@ -76,6 +78,7 @@ bus.registry.register(Command.ID, new CommandHandler());
 
 bus.handle(new Command('param'));
 ```
+
 
 ## Contributing
 
