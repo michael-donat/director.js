@@ -1,16 +1,10 @@
 const director = require('.');
 
-class CommandHandler {
-	execute(command, callback) {
-		if (!command.param) {
-			return callback(new Error('Expected param to have a value.'));
-		}
-		callback(null, command.param);
-	}
-}
-
 class PromiseCommandHandler {
-	execute(command) {
+	execute(command, context) {
+		if (context.logger) {
+			context.logger('RUNNING')
+		}
 		return new Promise((resolve, reject) => {
 			setTimeout(() => {
 				if (!command.param) {
@@ -29,52 +23,35 @@ class Command {
 	}
 }
 
+class Decorator {
+	constructor(bus) {
+		this.bus = bus;
+	}
+
+	handle(command, context = {}) {
+		context.logger = console.log.bind('OMG');
+		return this.bus.handle(command, context).then((result) => {
+			console.log('Executed');
+			return result;
+		}).catch(err => {
+			console.log('Failed');
+			throw err;
+		})
+	}
+}
+
 Command.prototype.ID = 'command';
 
-const callbackBus = director();
 const promiseBus = director();
 
-callbackBus.registry.register(Command.prototype.ID, new CommandHandler());
 promiseBus.registry.register(Command.prototype.ID, new PromiseCommandHandler());
 
-callbackBus.use({handle: (handler, command, next) => {
-	console.log('1');
-	next();
-}});
+const bus = new Decorator(promiseBus);
 
-callbackBus.use({handle: (handler, command, next) => {
-	console.log('2');
-	next();
-}});
-
-callbackBus.handle(new Command('param'), function(err, result) {
-	console.log('Result: ', result);
-	console.error('Error:  ', err);
-});
-
-promiseBus.use({handle: (handler, command, next) => {
-	return new Promise((resolve) => {
-		console.log('prom1');
-		setTimeout(()=>resolve(next()), 1000);
-	});
-}});
-
-promiseBus.use({handle: (handler, command, next) => {
-	return new Promise((resolve) => {
-		console.log('prom2');
-		setTimeout(()=>resolve(next()), 2000);
-	});
-}});
-
-promiseBus.handle(new Command('param'))
+bus.handle(new Command('param'))
 	.then((result) => console.log('Result: ', result))
 	.catch((err) => console.error('Error:  ', err));
 
-/*
-promiseBus.handle(new Command())
+bus.handle(new Command())
 	.then((result) => console.log('Result: ', result))
 	.catch((err) => console.error('Error:  ', err));
-*/
-
-
-

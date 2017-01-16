@@ -9,8 +9,8 @@ module.exports = class Bus {
 		this.middleware = [];
 	}
 
-	use(middleware) {
-		this.middleware.push(middleware);
+	setRegistry(registry) {
+		this.registry = registry;
 	}
 
 	resolveHandler(command) {
@@ -40,32 +40,33 @@ module.exports = class Bus {
 		return { handler, method: handlerMethod, name };
 	}
 
-	handle(command, callback) {
-		try {
-			if (!command) {
-				throw new Error(`Command expected, got ${typeof(command)} instead.`);
-			}
-
-			const { handler, method } = this.resolveHandler(command);
-
-			const middlewareStack = this.middleware.slice(0);
-
-			function next() {
-				const middleware = middlewareStack.shift();
-
-				if (!middleware) {
-					return method.call(handler, command, callback);
+	handle(command, context = {}) {
+		return new Promise((resolve, reject) => {
+			try {
+				if (!command) {
+					throw new Error(`Command expected, got ${typeof(command)} instead.`);
 				}
 
-				return middleware.handle(handler, command, next);
-			}
+				const { handler, method, name } = this.resolveHandler(command);
 
-			return next();
-		} catch (error) {
-			if (callback) {
-				return callback(error);
+				context.commandName = name;
+
+				const middlewareStack = this.middleware.slice(0);
+
+				function next() {
+					const middleware = middlewareStack.shift();
+
+					if (!middleware) {
+						return method.call(handler, command, context);
+					}
+
+					return middleware(handler, command, context, next)
+				}
+
+				resolve(next());
+			} catch (error) {
+				reject(error);
 			}
-			throw error;
-		}
+		});
 	}
 }

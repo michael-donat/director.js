@@ -15,12 +15,13 @@ describe('Bus', function() {
 
 	describe('handle', function() {
 		it('throws on invalid command', function() {
-			expect(()=>this.bus.handle()).to.throw(/Command expected/);
+			return expect(this.bus.handle()).to.eventually.be.rejectedWith(/Command expected/);
 		});
 		it('calls handler method with passed command and returns result', function() {
 			const method = sinon.stub();
 			const handler = sinon.stub();
 			handler.execute = method;
+			method.resolves(123);
 			const command = sinon.stub();
 			this.bus.resolveHandler = () => {
 				return { method: handler.execute, handler: handler };
@@ -28,7 +29,7 @@ describe('Bus', function() {
 
 			method.returns(123);
 
-			expect(this.bus.handle(command)).to.equal(123);
+			expect(this.bus.handle(command)).to.eventually.equal(123);
 
 			expect(method).to.have.been.calledWith(command);
 			expect(method).to.have.been.calledOn(handler);
